@@ -292,7 +292,7 @@ def get_basename(
     basename: str
         basename string.
     """
-    basename = f"HERA-III_antenna_diameter{antenna_diameter:.1f}_fractional_spacing{fractional_spacing:.1f}_nant{antenna_count}_nf{nf}_df{df/1e3:.3f}kHz_f0{f0/1e6:.3f}MHz"
+    basename = f"Garray_antenna_diameter{antenna_diameter:.1f}_fractional_spacing{fractional_spacing:.1f}_nant{antenna_count}_nf{nf}_df{df/1e3:.3f}kHz_f0{f0/1e6:.3f}MHz"
     return basename
 
 
