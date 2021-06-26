@@ -5,22 +5,6 @@ import yaml
 import numpy as np
 
 
-def test_get_basename():
-    basename = visibilities.get_basename()
-    assert basename == "HERA-III_antenna_diameter2.0_fractional_spacing1.0_nant10_nf200_df100.000kHz_f0100.000MHz"
-
-
-def test_initialize_telescope_yaml(tmpdir):
-    tmppath = tmpdir.strpath
-    (
-        obs_param_yaml_name,
-        telescope_yaml_name,
-        csv_name,
-    ) = visibilities.initialize_telescope_yamls(output_dir=tmppath, df=50e3)
-    assert os.path.exists(obs_param_yaml_name)
-    assert os.path.exists(telescope_yaml_name)
-    assert os.path.exists(csv_name)
-
 
 def test_intialize_simulation_uvdata(tmpdir):
     tmppath = tmpdir.strpath
