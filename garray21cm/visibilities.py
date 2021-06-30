@@ -19,7 +19,6 @@ def compute_visibilities(
     nside_sky=256,
     clobber=False,
     compress_by_redundancy=True,
-    keep_config_files_on_disk=False,
     include_autos=False,
     include_gsm=True,
     include_gleam=True,
@@ -33,6 +32,11 @@ def compute_visibilities(
 
     Parameters
     ----------
+    obs_yaml: str
+        path to pyuvsim observation yaml specifying array layout etc...
+        can be generated with garrays.initialize_telescope_yamls
+    basename: str
+        basename for outputs.
     eor_fg_ratio: float, optional
         ratio between stdev of eor and foregrounds over all healpix pixels.
         default is 1e-5
@@ -52,9 +56,6 @@ def compute_visibilities(
         directory to write simulation config files.
     clobber: bool, optional
         overwrite existing config files.
-    keep_config_files_on_disk: bool, optional
-        Keep config files on disk. Otherwise delete.
-        default is False.
     include_gsm: bool, optional.
         include desourced gsm in sky model.
         default is True.
@@ -124,9 +125,9 @@ def compute_visibilities(
 
         # initialize simulator
         uvdata, beams, beam_ids = garrays.initialize_uvdata(
+            obs_param_yaml_name=obs_yaml,
             output_dir=output_dir,
             clobber=clobber,
-            keep_config_files_on_disk=keep_config_files_on_disk,
         )
         # define eor cube with random noise.
         eorcube = skymodel.initialize_eor(uvdata.freq_array[0], nside_sky)

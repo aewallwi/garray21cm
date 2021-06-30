@@ -1,11 +1,10 @@
 import numpy as np
 import healpy as hp
 from .data import DATA_PATH
-from . import defaults
 import os
 
 
-def initialize_eor(frequencies, nside_sky=defaults.nside_sky):
+def initialize_eor(frequencies, nside_sky=256):
     """Generate EoR sky-cube.
 
     Parameters
@@ -14,7 +13,7 @@ def initialize_eor(frequencies, nside_sky=defaults.nside_sky):
         1d array of frequencies (float)
     nside_sky: int, optional
         nsides of healpix sky-model
-        default is set in defaults.py
+        default is 256
 
     Returns
     -------
@@ -28,7 +27,7 @@ def initialize_eor(frequencies, nside_sky=defaults.nside_sky):
 
 def initialize_gsm(
     frequencies,
-    nside_sky=defaults.nside_sky,
+    nside_sky=256,
     save_cube=False,
     output_dir="./",
     clobber=False,

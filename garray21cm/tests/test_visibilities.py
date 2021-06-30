@@ -20,6 +20,7 @@ def fiveant_yaml(tmpdir):
         nf=13,
         df=400e3,
         f0=120e6,
+        Ntimes=5,
      )
     obs_yaml = os.path.join(tmppath, 'test_five_ants.yaml')
     return obs_yaml
@@ -32,7 +33,6 @@ def test_compute_visibilities(fiveant_yaml, tmpdir):
         output_dir=tmppath,
         eor_fg_ratio=3.7e-2,
         nside_sky=8,
-        keep_config_files_on_disk=False,
         clobber=True,
         compress_by_redundancy=False,
     )
@@ -43,8 +43,8 @@ def test_compute_visibilities(fiveant_yaml, tmpdir):
     for uvdata in [uvd_gsm, uvd_eor]:
         assert uvdata.Nfreqs == 13
         assert uvdata.freq_array.min() == 120e6
-        assert uvdata.Nbls == 5 * 6 / 2
-        assert uvdata.Ntimes == 1
+        assert uvdata.Nbls == 5 * 6 / 2 - 5
+        assert uvdata.Ntimes == 5
         bl_lens = np.linalg.norm(uvdata.uvw_array, axis=1)
         gtz = bl_lens > 0.0
         assert np.isclose(np.min(bl_lens[gtz]), 3.1)

@@ -282,8 +282,10 @@ def generate_1d_array(antenna_count, separation_unit=2.0, angle_EW=0.0, copies=1
         antpos_x = np.hstack([antpos_x, np.asarray(golomb_dict[antenna_count]) * separation_unit])
         antpos_y = np.hstack([antpos_y, np.ones(antenna_count) * copy_separation * mirror])
     # rotate
-    antpos_x = np.cos(angle_EW) * antpos_x + np.sin(angle_EW) * antpos_y
-    antpos_y = np.cos(angle_EW) * antpos_y - np.sin(angle_EW) * antpos_x
+    antpos_x_t = np.cos(angle_EW) * antpos_x + np.sin(angle_EW) * antpos_y
+    antpos_y_t = np.cos(angle_EW) * antpos_y - np.sin(angle_EW) * antpos_x
+    antpos_x = antpos_x_t
+    antpos_y = antpos_y_t
     antpos_z = np.zeros_like(antpos_x)
     return np.vstack([antpos_x, antpos_y, antpos_z]).T
 
@@ -298,7 +300,6 @@ def initialize_telescope_yamls(
     nf=200,
     f0=120e6,
     start_time=2459122.5835133335,  # .25108 + 8. / 24.,
-    duration_days=0.001157407407,  # 1 * 100. / (24 * 3600),
     integration_time=100,
     Ntimes=1,
     polarizations=[
@@ -359,7 +360,7 @@ def initialize_telescope_yamls(
 
     telescope_yaml_dict = {
         "beam_paths": {i: {"type": "airy"} for i in range(len(antenna_positions))},
-        "antenna_diameter": antenna_diameter,
+        "diameter": antenna_diameter,
         "telescope_location": "(-30.721527777777847, 21.428305555555557, 1073.0000000046566)",
         "telescope_name": "HERA",
         "x_orientation": "north",
