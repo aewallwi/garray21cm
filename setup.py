@@ -55,7 +55,7 @@ setup(
                       'pygdsm @ git+git://github.com/telegraphic/pygdsm',
                       'uvtools @ git+git://github.com/HERA-Team/uvtools',
                       'pyuvsim @ git+git://github.com/RadioAstronomySoftwareGroup/pyuvsim',
-                      'hera_sim @ git+git://github.com/HERA-Team/hera_sim'
+                      'hera_sim @ git+git://github.com/HERA-Team/hera_sim',
                       'pygdsm @ git+git://github.com/telegraphic/pygdsm'
                       ],
     # hera_sim GPU seems to have dependency conflicts with tensorflow.
