@@ -9,11 +9,10 @@ import numpy as np
 @pytest.fixture
 def fiveant_yaml(tmpdir):
     tmppath = tmpdir.strpath
-    ant_pos = garrays.generate_1d_array(antenna_count=5, separation_unit=3.1,
-                                angle_EW=33. / 180. * np.pi)
+    ant_pos = garrays.generate_1d_array(antenna_count=5, separation_unit=3.1, angle_EW=33.0 / 180.0 * np.pi)
     telescope_yamls = garrays.initialize_telescope_yamls(
         antenna_positions=ant_pos,
-        basename='test_five_ants',
+        basename="test_five_ants",
         output_dir=tmppath,
         clobber=True,
         antenna_diameter=2.0,
@@ -21,15 +20,16 @@ def fiveant_yaml(tmpdir):
         df=400e3,
         f0=120e6,
         Ntimes=5,
-     )
-    obs_yaml = os.path.join(tmppath, 'test_five_ants.yaml')
+    )
+    obs_yaml = os.path.join(tmppath, "test_five_ants.yaml")
     return obs_yaml
+
 
 def test_compute_visibilities(fiveant_yaml, tmpdir):
     tmppath = tmpdir.strpath
     uvd_gsm, uvd_eor = visibilities.compute_visibilities(
         obs_yaml=fiveant_yaml,
-        basename='test_five_ants',
+        basename="test_five_ants",
         output_dir=tmppath,
         eor_fg_ratio=3.7e-2,
         nside_sky=8,
