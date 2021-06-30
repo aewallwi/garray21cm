@@ -28,12 +28,12 @@ long_description = (here / 'README.md').read_text(encoding='utf-8')
 data_files = package_files('garray21cm', 'data')
 
 setup(
-    name='aesahaettr',  # Required
+    name='garray21cm',  # Required
     version='0.0.1',  # Required
     description='Inter-baseline foreground filtering tools',  # Optional
     long_description=long_description,  # Optional
     long_description_content_type='text/markdown',  # Optional (see note above)
-    url='https://github.com/aewallwi/aesahaettr',  # Optional
+    url='https://github.com/aewallwi/garray21cm',  # Optional
     author='A. Ewall-Wice',  # Optional
     author_email='aaronew@berkeley.edu',  # Optional
     classifiers=[
@@ -47,7 +47,7 @@ setup(
         'Programming Language :: Python :: 3 :: Only',
     ],
     keywords='21cm, cosmology, foregrounds, radio astronomy, cosmic dawn',
-    package_dir={'aesahaettr': 'aesahaettr'},
+    package_dir={'garray21cm': 'garray21cm'},
     packages=['garray21cm'],
     python_requires='>=3.6, <4',
     install_requires=['pyuvdata',
@@ -56,7 +56,7 @@ setup(
                       'uvtools @ git+git://github.com/HERA-Team/uvtools',
                       'pyuvsim @ git+git://github.com/RadioAstronomySoftwareGroup/pyuvsim',
                       'hera_sim @ git+git://github.com/HERA-Team/hera_sim'
-                      'aesahaettr @ git+git://github.com/aewallwi/aesahaettr'
+                      'pygdsm @ git+git://github.com/telegraphic/pygdsm'
                       ],
     # hera_sim GPU seems to have dependency conflicts with tensorflow.
     #extras_require={

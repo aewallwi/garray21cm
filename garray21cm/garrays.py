@@ -250,14 +250,14 @@ golomb_dict = {
 }
 
 
-def generate_1d_array(antenna_count, separation_factor=2.0, angle_EW=0.0, copies=1, copy_separation=2.0):
+def generate_1d_array(antenna_count, separation_unit=2.0, angle_EW=0.0, copies=1, copy_separation=2.0):
     """Generate a 1d golomb array (or n copies)
 
     Parameters
     ----------
     antenna_count: int
         number of antennas in each golomb ruler.
-    separation_factor: float, optional
+    separation_unit: float, optional
         smallest separation between antennas in the array (meters).
         default is 2.0
     angle_EW: float: optional
@@ -279,7 +279,7 @@ def generate_1d_array(antenna_count, separation_factor=2.0, angle_EW=0.0, copies
     antpos_y = []
     # mirror
     for mirror in range(copies):
-        antpos_x = np.hstack([antpos_x, np.asarray(golomb_dict[antenna_count]) * separation_factor])
+        antpos_x = np.hstack([antpos_x, np.asarray(golomb_dict[antenna_count]) * separation_unit])
         antpos_y = np.hstack([antpos_y, np.ones(antenna_count) * copy_separation * mirror])
     # rotate
     antpos_x = np.cos(angle_EW) * antpos_x + np.sin(angle_EW) * antpos_y
@@ -405,7 +405,6 @@ def initialize_uvdata(
     obs_param_yaml_name,
     output_dir="./",
     clobber=False,
-    keep_config_files_on_disk=False,
     compress_by_redundancy=False,
 ):
     """Prepare configuration files and UVData to run simulation.
@@ -416,13 +415,8 @@ def initialize_uvdata(
         directory to write simulation config files.
     clobber: bool, optional
         overwrite existing config files.
-    keep_config_files_on_disk: bool, optional
-        Keep config files on disk. Otherwise delete.
-        default is False.
     compress_by_redundancy: bool, optional
         If True, compress by redundancy. Makes incompatible with VisCPU for now.
-    array_kwargs: kwarg_dict, optional
-        array parameters. See get_basename for details.
 
     Returns
     -------

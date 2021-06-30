@@ -1,91 +1,51 @@
 import pytest
 from .. import visibilities
+from .. import garrays
 import os
 import yaml
 import numpy as np
 
 
-
-def test_intialize_simulation_uvdata(tmpdir):
+@pytest.fixture
+def fiveant_yaml(tmpdir):
     tmppath = tmpdir.strpath
-    array_kwargs = {
-        "df": 50e3,
-        "f0": 831.7e6,
-        "nf": 13,
-        "antenna_diameter": 4.3,
-        "fractional_spacing": 3.1,
-        "antenna_count": 21,
-    }
-    (
-        obs_param_yaml_name,
-        telescope_yaml_name,
-        csv_name,
-    ) = visibilities.initialize_telescope_yamls(output_dir=tmppath, **array_kwargs)
-    uvdata, beams, beam_ids = visibilities.initialize_uvdata(
-        output_dir=tmppath, keep_config_files_on_disk=False, **array_kwargs
-    )
-    # assert that yamls have been erased.
-    assert not os.path.exists(obs_param_yaml_name)
-    assert not os.path.exists(telescope_yaml_name)
-    assert not os.path.exists(csv_name)
-    # now check that they have not been erased.
-    uvdata, beams, beam_ids = visibilities.initialize_uvdata(
-        output_dir=tmppath, keep_config_files_on_disk=True, **array_kwargs
-    )
+    ant_pos = garrays.generate_1d_array(antenna_count=5, separation_unit=3.1,
+                                angle_EW=33. / 180. * np.pi)
+    telescope_yamls = garrays.initialize_telescope_yamls(
+        antenna_positions=ant_pos,
+        basename='test_five_ants',
+        output_dir=tmppath,
+        clobber=True,
+        antenna_diameter=2.0,
+        nf=13,
+        df=400e3,
+        f0=120e6,
+     )
+    obs_yaml = os.path.join(tmppath, 'test_five_ants.yaml')
+    return obs_yaml
 
-    assert os.path.exists(obs_param_yaml_name)
-    assert os.path.exists(telescope_yaml_name)
-    assert os.path.exists(csv_name)
-
-    assert np.allclose(np.diff(uvdata.freq_array[0]), 50e3)
-    # check that uvdata parameters make sense.
-    assert uvdata.Nfreqs == 13
-    assert uvdata.freq_array.min() == 831.7e6
-    assert uvdata.Nbls == 21 * 22 / 2
-    assert uvdata.Ntimes == 1
-    bl_lens = np.linalg.norm(uvdata.uvw_array, axis=1)
-    gtz = bl_lens > 0.0
-    assert np.isclose(np.min(bl_lens[gtz]), 4.3 * 3.1)
-    assert np.isclose(np.max(bl_lens), 4.3 * 3.1 * 333)
-
-
-def test_compute_visibilities(tmpdir):
-    array_kwargs = {
-        "nf": 13,
-        "f0": 831.7e6,
-        "antenna_count": 5,
-        "antenna_diameter": 2.1,
-        "fractional_spacing": 4.3,
-    }
+def test_compute_visibilities(fiveant_yaml, tmpdir):
     tmppath = tmpdir.strpath
-    (
-        obs_param_yaml_name,
-        telescope_yaml_name,
-        csv_name,
-    ) = visibilities.initialize_telescope_yamls(output_dir=tmppath, **array_kwargs)
     uvd_gsm, uvd_eor = visibilities.compute_visibilities(
+        obs_yaml=fiveant_yaml,
+        basename='test_five_ants',
         output_dir=tmppath,
         eor_fg_ratio=3.7e-2,
         nside_sky=8,
         keep_config_files_on_disk=False,
         clobber=True,
         compress_by_redundancy=False,
-        **array_kwargs
     )
-    assert not os.path.exists(obs_param_yaml_name)
-    assert not os.path.exists(telescope_yaml_name)
-    assert not os.path.exists(csv_name)
-
     assert np.isclose(
         np.sqrt(np.mean(np.abs(uvd_gsm.data_array) ** 2.0)),
         np.sqrt(np.mean(np.abs(uvd_eor.data_array) ** 2.0)) * 1 / (3.7e-2),
     )
     for uvdata in [uvd_gsm, uvd_eor]:
         assert uvdata.Nfreqs == 13
-        assert uvdata.freq_array.min() == 831.7e6
-        assert uvdata.Nbls == 5 * 6 / 2 - 5
+        assert uvdata.freq_array.min() == 120e6
+        assert uvdata.Nbls == 5 * 6 / 2
         assert uvdata.Ntimes == 1
         bl_lens = np.linalg.norm(uvdata.uvw_array, axis=1)
         gtz = bl_lens > 0.0
-        assert np.isclose(np.min(bl_lens[gtz]), 2.1 * 4.3)
-        assert np.isclose(np.max(bl_lens), 2.1 * 4.3 * 11)
+        assert np.isclose(np.min(bl_lens[gtz]), 3.1)
+        assert np.isclose(np.max(bl_lens), 3.1 * 11)
