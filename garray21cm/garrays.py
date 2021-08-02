@@ -250,6 +250,30 @@ golomb_dict = {
 }
 
 
+def generate_triangular_array():
+    """Generate a triangular radial golomb ruler array.
+    """
+    return
+
+def generate_1d_uniform_array(antenna_count, separation_unit=2.0, angle_EW=0.0, copies=1, copy_separation=2.0):
+    """
+
+    """
+    antpos_x = []
+    antpos_y = []
+    # mirror
+    for mirror in range(copies):
+        antpos_x = np.hstack([antpos_x, np.arange(antenna_count) * separation_unit])
+        antpos_y = np.hstack([antpos_y, np.ones(antenna_count) * copy_separation * mirror])
+    # rotate
+    antpos_x_t = np.cos(angle_EW) * antpos_x + np.sin(angle_EW) * antpos_y
+    antpos_y_t = np.cos(angle_EW) * antpos_y - np.sin(angle_EW) * antpos_x
+    antpos_x = antpos_x_t
+    antpos_y = antpos_y_t
+    antpos_z = np.zeros_like(antpos_x)
+    return np.vstack([antpos_x, antpos_y, antpos_z]).T
+
+
 def generate_1d_array(antenna_count, separation_unit=2.0, angle_EW=0.0, copies=1, copy_separation=2.0):
     """Generate a 1d golomb array (or n copies)
 
