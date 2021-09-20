@@ -2,6 +2,7 @@ import numpy as np
 import yaml
 import os
 from pyuvsim.simsetup import _complete_uvdata, initialize_uvdata_from_params
+import itertools
 
 golomb_dict = {
     1: [0],
@@ -314,6 +315,169 @@ def generate_1d_array(antenna_count, separation_unit=2.0, angle_EW=0.0, copies=1
     return np.vstack([antpos_x, antpos_y, antpos_z]).T
 
 
+# methods for two dimensional arrays
+class Point():
+    """
+    Helper class for generating antenna positions from intersections of lines.
+    """
+    def __init__(self, x, y):
+        """
+        Init Point object.
+
+        Parameters
+        ----------
+        x: float,
+            x-position of point.
+        y: float,
+            y-position of point.
+
+        Returns
+        -------
+        N/A
+
+        """
+        self.x = x
+        self.y = y
+    def translate(self, x, y):
+        """
+        Translate point.
+
+        Parameters
+        ----------
+        x: float
+            x-translation
+        y: float
+            y-translation
+
+        Returns
+        -------
+        N/A
+        """
+        self.x += x
+        self.y += y
+    def rotate(self, rot):
+        yt = np.sin(rot) * self.x + np.cos(rot) * self.y
+        xt = np.cos(rot) * self.x - np.sin(rot) * self.y
+        self.y = yt
+        self.x = xt
+
+
+class Line():
+    """
+    Helper class for generating antenna positions from intersections of lines.
+    """
+    def __init__(self, p0, p1):
+        """
+        """
+        self.slope = (p1.y - p0.y) / (p1.x - p0.x)
+        self.y0 = p0.y - p0.x * self.slope
+        self.p0 = p0
+        self.p1 = p1
+
+    def intersect(self, other):
+        xint = (other.y0 - self.y0) / (self.slope - other.slope)
+        yint = self.slope * xint + self.y0
+        return Point(xint, yint)
+
+
+def array_2d_intersection_method(order, min_spacing, opening_angle=np.pi / 3., rotation=0.0, chord_spacing='golomb'):
+    """
+    Generate a two dimensional array with a high proportion of baselines along radial lines
+
+    Parameters
+    ----------
+    order: int
+        number of antennas on each line.
+    opening_angle: float, optional
+        Opening angle of triangular array.
+        default is pi / 3.
+    rotation: float, optional
+        rotation of array
+        default is 0.0 -> form array lines drawn from vertices on x-axis.
+    chord_spacing: str, optional
+        if "golomb", draw golomb rulers on the two chords
+        if "uniform", points at the end of each intersection line are spaced
+        uniformly.
+        if "both", one set of lines is spaced like a golomb ruler and the other is
+        spaced uniformly.
+
+    Returns
+    -------
+    antenna_positions: np.ndarray
+        nant x 3 array of xyz antenna positions for 2d array with antennas on
+        intersections of radial lines between two points.
+
+    """
+    phi = (np.pi - opening_angle) / 2.
+
+    if chord_spacing == 'golomb':
+        garr = np.asarray(golomb_dict[order][:])
+        garr = garr / garr[-1]
+        garr1 = garr
+    elif chord_spacing == 'uniform':
+        garr = np.linspace(0, 1, order)
+        garr1 = garr
+    elif chord_spacing == 'both':
+        garr = np.asarray(golomb_dict[order][:])
+        garr = garr / garr[-1]
+        garr1 = np.linspace(0, 1, order)
+
+    # generate opposite exterior points
+    p1coll = [Point(g, 0) for g in garr]
+    p2coll = [Point(g, 0) for g in garr1]
+    # start out with golomb arrays or uniformly spaced arrays on x-axis.
+    for i in range(len(p1coll)):
+        p1coll[i].rotate(phi)
+        p2coll[i].rotate(phi)
+    for i in range(len(p1coll)):
+        # rotate collection 2 (second leg of triangle)
+        # and translate it.
+        p2coll[i].rotate(opening_angle)
+        p2coll[i].translate(2 * np.cos(phi), 0.)
+    for i in range(len(p1coll)):
+        # rotate both chords by rotation.
+        p1coll[i].rotate(rotation)
+        p2coll[i].rotate(rotation)
+
+    p2coll = p2coll[:-1]
+    # Generate interior points by drawing lines between each vertices and the
+    # points on opposite chord and then computing all of the intersections between the
+    # two collections of lines.
+    l1coll = [Line(p1coll[0], p2) for p2 in p2coll[1:]]
+    l2coll = [Line(p2coll[0], p1) for p1 in p1coll[1:-1]]
+
+    pintcoll = []
+    for l1 in l1coll:
+        for l2 in l2coll:
+            pint = l2.intersect(l1)
+            pintcoll.append(pint)
+
+    # Find smallest separation.
+    pcollection = pintcoll + p1coll + p2coll
+    nant = len(pcollection)
+    assert len(pcollection) == nant
+    separations = np.zeros(nant * (nant - 1) // 2)
+    nbl = 0
+    for i, j in itertools.combinations(range(nant), 2):
+        p1 = pcollection[i]
+        p2 = pcollection[j]
+        dx = p1.x - p2.x
+        dy = p1.y - p2.y
+        separations[nbl] = np.sqrt(dx * dx + dy * dy)
+        nbl += 1
+    scale_factor = min_spacing / np.min(separations)
+
+    # build x/y/z np.ndarrays
+    xvals = np.asarray([p.x for p in pcollection])
+    yvals = np.asarray([p.y for p in pcollection])
+    zvals = np.zeros_like(xvals)
+    # and return them.
+    antenna_positions = np.vstack([xvals, yvals, zvals]).T * scale_factor
+    return antenna_positions
+
+
+
+
 def initialize_telescope_yamls(
     antenna_positions,
     basename,
@@ -387,7 +551,7 @@ def initialize_telescope_yamls(
         "diameter": antenna_diameter,
         "telescope_location": "(-30.721527777777847, 21.428305555555557, 1073.0000000046566)",
         "telescope_name": "HERA",
-        "x_orientation": "north",
+        "x_orientation": "east",
     }
     obs_param_dict = {
         "freq": {
@@ -459,4 +623,5 @@ def initialize_uvdata(
     _complete_uvdata(uvdata, inplace=True)
     if compress_by_redundancy:
         uvdata.compress_by_redundancy(tol=0.25 * 3e8 / uvdata.freq_array.max(), inplace=True)
+    uvdata.x_orientation = 'east'
     return uvdata, beams, beam_ids

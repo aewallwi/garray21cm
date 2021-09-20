@@ -2,6 +2,7 @@ import pytest
 from .. import garrays
 import os
 import yaml
+import itertools
 import numpy as np
 
 
@@ -24,3 +25,17 @@ def test_initialize_telescope_yaml(tmpdir):
     assert os.path.exists(obs_param_yaml_name)
     assert os.path.exists(telescope_yaml_name)
     assert os.path.exists(csv_name)
+
+def test_array_2d_intersection_method():
+    for gorder in [5, 11, 23]:
+        # make sure the number of points line up.
+        xyz = garrays.array_2d_intersection_method(order=gorder, min_spacing=5., chord_spacing='both')
+        nint_points = gorder - 2
+        nants = int(nint_points ** 2. + 2 * nint_points + 3)
+        assert xyz.shape == (nants, 3)
+        separations = np.zeros(nants * (nants - 1) // 2)
+        nbl = 0
+        for i, j in itertools.combinations(range(len(xyz)), 2):
+            separations[nbl] = np.linalg.norm(xyz[i] - xyz[j])
+            nbl += 1
+        assert np.isclose(np.min(separations), 5.)
