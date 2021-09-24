@@ -27,9 +27,9 @@ def test_initialize_telescope_yaml(tmpdir):
     assert os.path.exists(csv_name)
 
 def test_array_2d_intersection_method():
-    for gorder in [5, 11, 23]:
+    for gorder in [3, 11, 23, 5]:
         # make sure the number of points line up.
-        xyz = garrays.array_2d_intersection_method(order=gorder, min_spacing=5., chord_spacing='both')
+        xyz, spoke_bls = garrays.array_2d_intersection_method(order=gorder, min_spacing=5., chord_spacing='both')
         nint_points = gorder - 2
         nants = int(nint_points ** 2. + 2 * nint_points + 3)
         assert xyz.shape == (nants, 3)
@@ -39,3 +39,20 @@ def test_array_2d_intersection_method():
             separations[nbl] = np.linalg.norm(xyz[i] - xyz[j])
             nbl += 1
         assert np.isclose(np.min(separations), 5.)
+        # check that the length of spoke_bls is what we expect
+        nbl_spoke = (2 + nint_points) * (1 + nint_points) * (2 + 2 * nint_points) / 2.
+        # make sure that baselines only appear once
+        bl_count = {}
+        for blgk in spoke_bls:
+            for bl in spoke_bls[blgk]:
+                if bl in bl_count:
+                    bl_count[bl] += 1
+                elif bl[::-1] in bl_count:
+                    bl_count[bl[::-1]] += 1
+                else:
+                    bl_count[bl] = 1
+
+        for bl in bl_count:
+            assert bl_count[bl] == 1
+
+        assert np.sum([bl_count[bl] for bl in bl_count]) == nbl_spoke

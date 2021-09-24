@@ -320,7 +320,7 @@ class Point():
     """
     Helper class for generating antenna positions from intersections of lines.
     """
-    def __init__(self, x, y):
+    def __init__(self, x, y, pid):
         """
         Init Point object.
 
@@ -330,6 +330,8 @@ class Point():
             x-position of point.
         y: float,
             y-position of point.
+        pid: int
+            integer identifier
 
         Returns
         -------
@@ -338,6 +340,8 @@ class Point():
         """
         self.x = x
         self.y = y
+        self.id = pid
+
     def translate(self, x, y):
         """
         Translate point.
@@ -374,10 +378,10 @@ class Line():
         self.p0 = p0
         self.p1 = p1
 
-    def intersect(self, other):
+    def intersect(self, other, pid):
         xint = (other.y0 - self.y0) / (self.slope - other.slope)
         yint = self.slope * xint + self.y0
-        return Point(xint, yint)
+        return Point(xint, yint, pid)
 
 
 def array_2d_intersection_method(order, min_spacing, opening_angle=np.pi / 3., rotation=0.0, chord_spacing='golomb'):
@@ -422,14 +426,22 @@ def array_2d_intersection_method(order, min_spacing, opening_angle=np.pi / 3., r
         garr = garr / garr[-1]
         garr1 = np.linspace(0, 1, order)
 
+    pid = 0
+    p1coll = []
+    p2coll = []
     # generate opposite exterior points
-    p1coll = [Point(g, 0) for g in garr]
-    p2coll = [Point(g, 0) for g in garr1]
+    for g in garr:
+        p1coll.append(Point(g, 0, pid))
+        pid += 1
+    for g in garr1[:-1]:
+        p2coll.append(Point(g, 0, pid))
+        pid += 1
     # start out with golomb arrays or uniformly spaced arrays on x-axis.
     for i in range(len(p1coll)):
         p1coll[i].rotate(phi)
+    for i in range(len(p2coll)):
         p2coll[i].rotate(phi)
-    for i in range(len(p1coll)):
+    for i in range(len(p2coll)):
         # rotate collection 2 (second leg of triangle)
         # and translate it.
         p2coll[i].rotate(opening_angle)
@@ -437,20 +449,34 @@ def array_2d_intersection_method(order, min_spacing, opening_angle=np.pi / 3., r
     for i in range(len(p1coll)):
         # rotate both chords by rotation.
         p1coll[i].rotate(rotation)
+    for i in range(len(p2coll)):
         p2coll[i].rotate(rotation)
 
-    p2coll = p2coll[:-1]
     # Generate interior points by drawing lines between each vertices and the
     # points on opposite chord and then computing all of the intersections between the
     # two collections of lines.
     l1coll = [Line(p1coll[0], p2) for p2 in p2coll[1:]]
     l2coll = [Line(p2coll[0], p1) for p1 in p1coll[1:-1]]
 
+    # index antenna collections by first and last antenna
+    antcollections = {(p1coll[0].id, p2.id): [p1coll[0].id, p2.id] for p2 in p2coll[1:]}
+    for p1 in p1coll[1:]:
+        antcollections[min(p2coll[0].id, p1.id), max(p2coll[0].id, p1.id)] = [p2coll[0].id, p1.id]
+
+    antcollections[min(p1coll[0].id, p1coll[-1].id), max(p1coll[0].id, p1coll[-1].id)] = [p1.id for p1 in p1coll]
+    antcollections[min(p2coll[0].id, p1coll[-1].id), max(p2coll[0].id, p1coll[-1].id)] = [p2.id for p2 in p2coll] + [p1coll[-1].id]
+
+
     pintcoll = []
     for l1 in l1coll:
         for l2 in l2coll:
-            pint = l2.intersect(l1)
+            pint = l2.intersect(l1, pid)
             pintcoll.append(pint)
+            ckey = min(l1.p0.id, l1.p1.id), max(l1.p0.id, l1.p1.id)
+            antcollections[ckey].append(pint.id)
+            ckey = min(l2.p0.id, l2.p1.id), max(l2.p0.id, l2.p1.id)
+            antcollections[ckey].append(pint.id)
+            pid += 1
 
     # Find smallest separation.
     pcollection = pintcoll + p1coll + p2coll
@@ -473,7 +499,22 @@ def array_2d_intersection_method(order, min_spacing, opening_angle=np.pi / 3., r
     zvals = np.zeros_like(xvals)
     # and return them.
     antenna_positions = np.vstack([xvals, yvals, zvals]).T * scale_factor
-    return antenna_positions
+
+    # get baseline groups with antenna numbers in each baseline
+    # ordered so that EW always the same sign (avoid conjugation mismatch).
+    blcoll = {}
+    antpos_dict = {p.id: (p.x, p.y) for p in pcollection}
+    for pc in antcollections:
+        blcoll[pc] = []
+        for bl in itertools.combinations(antcollections[pc], 2):
+            if antpos_dict[bl[0]][0] >= antpos_dict[bl[1]][0]:
+                blcoll[pc].append(bl)
+            else:
+                blcoll[pc].append(bl[::-1])
+
+        blcoll[pc] = [bl for bl in itertools.combinations(antcollections[pc], 2)]
+
+    return antenna_positions, blcoll
 
 
 
