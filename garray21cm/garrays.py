@@ -478,12 +478,14 @@ def array_2d_intersection_method(order, min_spacing, opening_angle=np.pi / 3., r
             antcollections[ckey].append(pint.id)
             pid += 1
 
-    # Find smallest separation.
     pcollection = pintcoll + p1coll + p2coll
+    # sorte by id
+    pcollection = sorted(pcollection, key=p.id)
     nant = len(pcollection)
     assert len(pcollection) == nant
     separations = np.zeros(nant * (nant - 1) // 2)
     nbl = 0
+    # Find smallest separation.
     for i, j in itertools.combinations(range(nant), 2):
         p1 = pcollection[i]
         p2 = pcollection[j]
