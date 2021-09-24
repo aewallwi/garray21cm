@@ -514,8 +514,6 @@ def array_2d_intersection_method(order, min_spacing, opening_angle=np.pi / 3., r
             else:
                 blcoll[pc].append(bl[::-1])
 
-        blcoll[pc] = [bl for bl in itertools.combinations(antcollections[pc], 2)]
-
     return antenna_positions, blcoll
 
 
