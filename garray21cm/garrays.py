@@ -480,7 +480,7 @@ def array_2d_intersection_method(order, min_spacing, opening_angle=np.pi / 3., r
 
     pcollection = pintcoll + p1coll + p2coll
     # sorte by id
-    pcollection = sorted(pcollection, key=p.id)
+    pcollection = sorted(pcollection, key=lambda p: p.id)
     nant = len(pcollection)
     assert len(pcollection) == nant
     separations = np.zeros(nant * (nant - 1) // 2)
