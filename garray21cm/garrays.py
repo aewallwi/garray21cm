@@ -594,7 +594,7 @@ def initialize_telescope_yamls(
         "telescope_name": "HERA",
         "x_orientation": "east",
     }
-    if beam_type = 'airy':
+    if beam_type == 'airy':
         telescope_yaml_dict["diameter"] = antenna_diameter
     obs_param_dict = {
         "freq": {
