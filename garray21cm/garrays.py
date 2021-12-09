@@ -534,6 +534,7 @@ def initialize_telescope_yamls(
     polarizations=[
         -5,
     ],
+    beam_type='airy'
 ):
     """Initialize observing yaml files for simulation.
 
@@ -588,12 +589,13 @@ def initialize_telescope_yamls(
     telescope_yaml_name = os.path.join(output_dir, f"{basename}_telescope_defaults.yaml")
 
     telescope_yaml_dict = {
-        "beam_paths": {i: {"type": "airy"} for i in range(len(antenna_positions))},
-        "diameter": antenna_diameter,
+        "beam_paths": {i: {"type": beam_type} for i in range(len(antenna_positions))},
         "telescope_location": "(-30.721527777777847, 21.428305555555557, 1073.0000000046566)",
         "telescope_name": "HERA",
         "x_orientation": "east",
     }
+    if beam_type = 'airy':
+        telescope_yaml_dict["diameter"] = antenna_diameter
     obs_param_dict = {
         "freq": {
             "Nfreqs": int(nf),

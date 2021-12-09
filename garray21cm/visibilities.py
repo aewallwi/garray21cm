@@ -23,6 +23,7 @@ def compute_visibilities(
     include_gsm=True,
     include_gleam=True,
     nsrcs_gleam=10000,
+    achromatic=False,
 ):
     """Compute visibilities for global sky-model with white noise EoR.
 
@@ -95,11 +96,12 @@ def compute_visibilities(
             obs_param_yaml_name=obs_yaml,
         )
         if include_gsm:
-            fgcube = skymodel.initialize_gsm(uvdata.freq_array[0], nside_sky=nside_sky, output_dir=output_dir)
+            fgcube = skymodel.initialize_gsm(uvdata.freq_array[0], nside_sky=nside_sky,
+                                             output_dir=output_dir, achromatic=achromatic)
         else:
             fgcube = np.zeros((len(uvdata.freq_array[0], hp.nside2npix(nside_sky))))
         if include_gleam:
-            fgcube = skymodel.add_gleam(uvdata.freq_array[0], fgcube, nsrcs=nsrcs_gleam)
+            fgcube = skymodel.add_gleam(uvdata.freq_array[0], fgcube, nsrcs=nsrcs_gleam, achromatic=achromatic)
         fg_simulator = vis_cpu.VisCPU(
             uvdata=uvdata,
             sky_freqs=uvdata.freq_array[0],
